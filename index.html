@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IPTrace — IP Location Intelligence</title>
+
+  <!-- Leaflet.js for Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ── BACKGROUND GRID ── -->
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-orb orb-1" aria-hidden="true"></div>
+  <div class="bg-orb orb-2" aria-hidden="true"></div>
+
+  <!-- ── HEADER ── -->
+  <header class="header">
+    <div class="logo">
+      <span class="logo-icon">◈</span>
+      <span class="logo-text">IP<strong>Trace</strong></span>
+    </div>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark/light mode">
+      <span class="toggle-icon" id="toggleIcon">☀</span>
+      <span class="toggle-label" id="toggleLabel">Light</span>
+    </button>
+  </header>
+
+  <!-- ── HERO ── -->
+  <main class="main">
+    <section class="hero">
+      <p class="hero-eyebrow">Network Intelligence Tool</p>
+      <h1 class="hero-title">Trace Any IP<br /><span class="accent">Instantly.</span></h1>
+      <p class="hero-sub">Geolocate IP addresses, inspect ISP data, and visualize locations on a live map.</p>
+
+      <!-- Search Bar -->
+      <div class="search-wrap">
+        <div class="search-bar" id="searchBar">
+          <span class="search-icon">⌕</span>
+          <input
+            type="text"
+            id="ipInput"
+            class="search-input"
+            placeholder="Enter IP address or domain…"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button class="search-btn" id="searchBtn" aria-label="Search IP">
+            <span class="btn-text">Trace</span>
+            <span class="btn-arrow">→</span>
+          </button>
+        </div>
+        <p class="search-hint">Leave blank to detect your current IP</p>
+      </div>
+    </section>
+
+    <!-- ── LOADING INDICATOR ── -->
+    <div class="loader-wrap" id="loaderWrap" hidden>
+      <div class="loader">
+        <div class="loader-ring"></div>
+        <div class="loader-ring"></div>
+        <div class="loader-ring"></div>
+      </div>
+      <p class="loader-text">Tracing route<span class="dots"></span></p>
+    </div>
+
+    <!-- ── ERROR MESSAGE ── -->
+    <div class="error-card" id="errorCard" hidden>
+      <span class="error-icon">⚠</span>
+      <p class="error-msg" id="errorMsg">An error occurred.</p>
+      <button class="error-close" id="errorClose">Dismiss</button>
+    </div>
+
+    <!-- ── RESULTS SECTION ── -->
+    <section class="results" id="results" hidden>
+
+      <!-- IP Badge -->
+      <div class="ip-badge" id="ipBadge">
+        <span class="ip-label">Traced IP</span>
+        <span class="ip-value" id="displayIp">—</span>
+        <span class="ip-copy" id="copyBtn" title="Copy IP">⧉</span>
+      </div>
+
+      <!-- Info Cards Grid -->
+      <div class="cards-grid">
+        <div class="info-card" data-index="0">
+          <div class="card-icon">🌍</div>
+          <div class="card-body">
+            <span class="card-label">Country</span>
+            <span class="card-value" id="valCountry">—</span>
+            <span class="card-sub" id="valContinent">—</span>
+          </div>
+        </div>
+        <div class="info-card" data-index="1">
+          <div class="card-icon">🏙</div>
+          <div class="card-body">
+            <span class="card-label">City / Region</span>
+            <span class="card-value" id="valCity">—</span>
+            <span class="card-sub" id="valRegion">—</span>
+          </div>
+        </div>
+        <div class="info-card" data-index="2">
+          <div class="card-icon">📡</div>
+          <div class="card-body">
+            <span class="card-label">ISP / Org</span>
+            <span class="card-value" id="valIsp">—</span>
+            <span class="card-sub" id="valAsn">—</span>
+          </div>
+        </div>
+        <div class="info-card" data-index="3">
+          <div class="card-icon">🕐</div>
+          <div class="card-body">
+            <span class="card-label">Timezone</span>
+            <span class="card-value" id="valTimezone">—</span>
+            <span class="card-sub" id="valLocalTime">—</span>
+          </div>
+        </div>
+        <div class="info-card" data-index="4">
+          <div class="card-icon">📌</div>
+          <div class="card-body">
+            <span class="card-label">Latitude</span>
+            <span class="card-value" id="valLat">—</span>
+            <span class="card-sub">Degrees North/South</span>
+          </div>
+        </div>
+        <div class="info-card" data-index="5">
+          <div class="card-icon">📌</div>
+          <div class="card-body">
+            <span class="card-label">Longitude</span>
+            <span class="card-value" id="valLon">—</span>
+            <span class="card-sub">Degrees East/West</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Map -->
+      <div class="map-container">
+        <div class="map-header">
+          <span class="map-label">📍 Live Location Map</span>
+          <span class="map-coords" id="mapCoords">—</span>
+        </div>
+        <div id="map"></div>
+        <div class="map-footer">Powered by Leaflet · OpenStreetMap contributors</div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- ── FOOTER ── -->
+  <footer class="footer">
+    <p>IPTrace · Built with Leaflet.js & ipapi.co · Data for informational purposes only</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
