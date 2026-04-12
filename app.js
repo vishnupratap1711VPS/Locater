@@ -7,6 +7,10 @@ const errorMsg = document.getElementById("errorMsg");
 const errorClose = document.getElementById("errorClose");
 const results = document.getElementById("results");
 
+const themeToggle = document.getElementById("themeToggle");
+const toggleIcon = document.getElementById("toggleIcon");
+const toggleLabel = document.getElementById("toggleLabel");
+
 const els = {
   ip: document.getElementById("displayIp"),
   country: document.getElementById("valCountry"),
@@ -26,22 +30,77 @@ const els = {
 let map;
 let marker;
 
+// ─── THEME ───
+let isDark = true;
+
+// load saved theme
+const savedTheme = localStorage.getItem("theme");
+if (savedTheme) {
+  document.documentElement.setAttribute("data-theme", savedTheme);
+  isDark = savedTheme === "dark";
+}
+
+// update button UI
+toggleIcon.textContent = isDark ? "☀" : "🌙";
+toggleLabel.textContent = isDark ? "Light" : "Dark";
+
+// toggle theme
+themeToggle.addEventListener("click", () => {
+  isDark = !isDark;
+
+  const theme = isDark ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme", theme);
+
+  toggleIcon.textContent = isDark ? "☀" : "🌙";
+  toggleLabel.textContent = isDark ? "Light" : "Dark";
+
+  localStorage.setItem("theme", theme);
+});
+
 // ─── UI HELPERS ───
 function showLoader() {
   loaderWrap.hidden = false;
   results.hidden = true;
   errorCard.hidden = true;
 }
+
 function hideLoader() {
   loaderWrap.hidden = true;
 }
+
 function showError(msg) {
   errorMsg.textContent = msg;
   errorCard.hidden = false;
 }
+
 errorClose.addEventListener("click", () => {
   errorCard.hidden = true;
 });
+
+// ─── SIMPLE INPUT CHECK ───
+function validateInput(ip) {
+  if (!ip) return true;
+
+  const parts = ip.split(".");
+
+  // check IP
+  if (parts.length === 4) {
+    for (let part of parts) {
+      const num = Number(part);
+      if (isNaN(num) || num < 0 || num > 255) {
+        throw new Error("Invalid IP address");
+      }
+    }
+    return true;
+  }
+
+  // simple domain check
+  if (ip.includes(".") && ip.length > 3) {
+    return true;
+  }
+
+  throw new Error("Enter valid IP or domain");
+}
 
 // ─── GET USER IP ───
 async function getMyIP() {
@@ -50,7 +109,7 @@ async function getMyIP() {
   return data.ip;
 }
 
-// ─── GET LOCATION (CORS SAFE API) ───
+// ─── GET LOCATION (CORS SAFE) ───
 async function getLocation(ip) {
   const url = ip
     ? `https://api.ipapi.is/?q=${ip}`
@@ -78,7 +137,7 @@ async function getLocation(ip) {
   };
 }
 
-// ─── POPULATE UI ───
+// ─── SHOW DATA ───
 function showData(d) {
   els.ip.textContent = d.ip;
   els.country.textContent = d.country;
@@ -97,7 +156,7 @@ function showData(d) {
   els.lon.textContent = lon ? lon.toFixed(5) : "—";
   els.mapCoords.textContent = lat && lon ? `${lat}, ${lon}` : "—";
 
-  // ─── MAP ───
+  // map
   if (lat && lon) {
     if (!map) {
       map = L.map("map").setView([lat, lon], 10);
@@ -124,6 +183,8 @@ async function traceIP(value) {
 
   try {
     let ip = value.trim();
+
+    validateInput(ip);
 
     if (!ip) {
       ip = await getMyIP();
